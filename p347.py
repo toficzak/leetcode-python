@@ -1,3 +1,4 @@
+import heapq
 import unittest
 from collections import defaultdict, Counter
 from typing import List
@@ -17,6 +18,15 @@ from typing import List
 # Use a bounded integer range as array indices to avoid sorting.
 # - time complexity: O(n) for dict creation, then O(n) for buckets creation and O(n) for retrieving result: O(n)
 # - space complexity: O(n) - created dict
+
+# 3) heap
+# pattern: top k elements -> heap
+# Use min-heap to keep k most frequent elements and compare next elements with the worst one.
+# - time complexity: O(n) for aggregating frequencies,
+#                    O(n) for iterating through each element, O(log k) for swapping elements and O(1) for ignoring,
+#                    hence O(n log k)
+# - space complexity: O(n) for frequencies array.
+#                     O(k) for heap, so O(n) in general
 class Solution:
     def topKFrequentSort(self, nums: List[int], k: int) -> List[int]:
         frequency = {}
@@ -48,12 +58,35 @@ class Solution:
         frequency = Counter(nums)
         return [num for num, _ in frequency.most_common(k)]
 
+    def topKFrequentHeap(self, nums: List[int], k: int) -> List[int]:
+        frequencies = {}  # map: number to frequency
+        for num in nums:
+            frequencies[num] = frequencies.get(num, 0) + 1
+
+        heap = []  # by default, heapq keeps min-heap, that's what I need
+        for number, frequency in frequencies.items():
+            if len(heap) < k:
+                heapq.heappush(heap, (frequency, number))
+            else:
+                if frequency > heap[0][0]:
+                    heapq.heappushpop(heap, (frequency, number))
+
+        return [number for _, number in heap]
+
+    def topKFrequentHeapIdiomatic(self, nums: List[int], k: int) -> List[int]:
+        frequencies = {}  # map: number to frequency
+        for num in nums:
+            frequencies[num] = frequencies.get(num, 0) + 1
+        topK = heapq.nlargest(k, frequencies.items(), key=lambda x: x[1])
+        return [number for number, _ in topK]
+
 
 class Test(unittest.TestCase):
     testcases = [
         ([1, 1, 1, 2, 2, 3], 2, [1, 2]),
         ([1], 1, [1]),
-        ([1, 2, 1, 2, 1, 2, 3, 1, 3, 2], 2, [1, 2])
+        ([1, 2, 1, 2, 1, 2, 3, 1, 3, 2], 2, [1, 2]),
+        ([], 1, [])
     ]
 
     def testSort(self):
@@ -70,3 +103,13 @@ class Test(unittest.TestCase):
         for input_array, k, expected in self.testcases:
             with self.subTest(input_array):
                 self.assertEqual(sorted(Solution().topKFrequentIdiomatic(input_array, k)), sorted(expected))
+
+    def testHeap(self):
+        for input_array, k, expected in self.testcases:
+            with self.subTest(input_array):
+                self.assertEqual(sorted(Solution().topKFrequentHeap(input_array, k)), sorted(expected))
+
+    def testHeapIdiomatic(self):
+        for input_array, k, expected in self.testcases:
+            with self.subTest(input_array):
+                self.assertEqual(sorted(Solution().topKFrequentHeapIdiomatic(input_array, k)), sorted(expected))
