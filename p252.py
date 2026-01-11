@@ -1,11 +1,8 @@
 import unittest
 from typing import List
 
+from Interval import Interval
 
-class Interval(object):
-    def __init__(self, start, end):
-        self.start = start
-        self.end = end
 
 # n = intervals.length
 # - theoretical lower bound: O(n), each interval must be inspected at least once
